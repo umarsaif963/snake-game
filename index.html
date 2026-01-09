@@ -9,11 +9,17 @@
 <body>
     <main class="game">
         <h1>🐍 Snake and Ladders</h1>
-        <p class="players">
-            Player 1: <span class="player1">💀</span> &nbsp;|&nbsp;
-            Player 2: <span class="player2">😎</span>
-        </p>
-        <div id="board" class="board"></div>
+        <div class="layout">
+            <div class="side">
+                <p class="side-name player1">💀 Player 1</p>
+                <div id="diceBox1" class="dice-box">-</div>
+            </div>
+            <div id="board" class="board"></div>
+            <div class="side">
+                <p class="side-name player2">Player 2 😎</p>
+                <div id="diceBox2" class="dice-box">-</div>
+            </div>
+        </div>
         <div class="controls">
             <button id="rollBtn">🎲 Roll Dice</button>
             <button id="resetBtn">🔄 Restart</button>
