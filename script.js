@@ -5,6 +5,11 @@ const statusEl = document.getElementById("status");
 const messageEl = document.getElementById("message");
 const diceBox1 = document.getElementById("diceBox1");
 const diceBox2 = document.getElementById("diceBox2");
+const winnerOverlay = document.getElementById("winnerOverlay");
+const winnerNameEl = document.getElementById("winnerName");
+const closeWinnerBtn = document.getElementById("closeWinnerBtn");
+
+const CONFETTI_EMOJIS = ["🎉", "🎊", "🥳", "🎈", "⭐", "✨", "💛"];
 
 const SNAKES = { 4: 0, 15: 9, 29: 13, 49: 37, 98: 47 };
 
@@ -55,41 +60,85 @@ function penalty(p) {
     return p;
 }
 
-function play() {
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function play() {
     if (gameOver) return;
+    rollBtn.disabled = true;
 
     const playerName = currentTurn === 1 ? "Player 1 💀" : "Player 2 😎";
+    const isPlayer1 = currentTurn === 1;
 
     const dice = Math.floor(Math.random() * 6) + 1;
-    if (currentTurn === 1) {
+    if (isPlayer1) {
         diceBox1.textContent = dice;
     } else {
         diceBox2.textContent = dice;
     }
-    let newPos = (currentTurn === 1 ? position_01 : position_02) + dice;
+
+    const start = isPlayer1 ? position_01 : position_02;
+    let newPos = start + dice;
     if (newPos > 99) newPos = 99;
 
-    messageEl.textContent = `${playerName} rolled ${dice} ➜ cell ${newPos + 1}`;
-    newPos = penalty(newPos);
+    messageEl.textContent = `${playerName} rolled ${dice}`;
 
-    if (currentTurn === 1) {
-        position_01 = newPos;
-    } else {
-        position_02 = newPos;
+    for (let step = start + 1; step <= newPos; step++) {
+        await sleep(250);
+        if (isPlayer1) {
+            position_01 = step;
+        } else {
+            position_02 = step;
+        }
+        placePlayers();
+        messageEl.textContent = `${playerName} 🎲${dice} ➜ cell ${step + 1}`;
     }
 
-    placePlayers();
+    newPos = penalty(newPos);
+    if (newPos !== (isPlayer1 ? position_01 : position_02)) {
+        await sleep(300);
+        if (isPlayer1) {
+            position_01 = newPos;
+        } else {
+            position_02 = newPos;
+        }
+        placePlayers();
+    }
 
     if (newPos >= 99) {
-        messageEl.textContent = `${playerName} wins! 🎉`;
         gameOver = true;
         rollBtn.disabled = true;
         statusEl.textContent = "";
+        showWinner(playerName);
         return;
     }
 
     currentTurn = currentTurn === 1 ? 2 : 1;
     statusEl.textContent = `It's ${currentTurn === 1 ? "Player 1 💀" : "Player 2 😎"}'s turn`;
+    rollBtn.disabled = false;
+}
+
+function showWinner(playerName) {
+    winnerNameEl.textContent = `${playerName} wins! 🏆`;
+    winnerOverlay.classList.remove("hidden");
+
+    for (let i = 0; i < 80; i++) {
+        const piece = document.createElement("span");
+        piece.className = "confetti";
+        piece.textContent = CONFETTI_EMOJIS[Math.floor(Math.random() * CONFETTI_EMOJIS.length)];
+        piece.style.left = Math.random() * 100 + "vw";
+        piece.style.fontSize = 16 + Math.random() * 22 + "px";
+        piece.style.animationDuration = 2.5 + Math.random() * 3 + "s";
+        piece.style.animationDelay = Math.random() * 2 + "s";
+        winnerOverlay.appendChild(piece);
+    }
+}
+
+function hideWinner() {
+    winnerOverlay.classList.add("hidden");
+    winnerOverlay.querySelectorAll(".confetti").forEach((el) => el.remove());
+    reset();
 }
 
 function reset() {
@@ -108,5 +157,6 @@ function reset() {
 
 rollBtn.addEventListener("click", play);
 resetBtn.addEventListener("click", reset);
+closeWinnerBtn.addEventListener("click", hideWinner);
 
 reset();
