@@ -16,9 +16,13 @@ function buildBoard() {
     for (let i = 1; i <= 100; i++) {
         const cell = document.createElement("div");
         cell.className = "cell";
-        if (SNAKES[i - 1] !== undefined) cell.classList.add("snake");
         cell.id = "cell-" + i;
-        cell.textContent = i;
+        if (SNAKES[i - 1] !== undefined) {
+            cell.classList.add("snake");
+            cell.textContent = "🐍";
+        } else {
+            cell.textContent = i;
+        }
         boardEl.appendChild(cell);
     }
 }

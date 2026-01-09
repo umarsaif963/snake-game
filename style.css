@@ -70,7 +70,8 @@ h1 {
 
 .cell.snake {
     background: #010e16;
-    color: #b7e4c7;
+    color: #ffffff;
+    font-size: 20px;
 }
 
 .marker1 {
