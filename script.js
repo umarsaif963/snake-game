@@ -11,6 +11,49 @@ const closeWinnerBtn = document.getElementById("closeWinnerBtn");
 
 const CONFETTI_EMOJIS = ["🎉", "🎊", "🥳", "🎈", "⭐", "✨", "💛"];
 
+function getDiceFaceHTML(value) {
+    const positions = {
+        1: [5],
+        2: [3, 7],
+        3: [1, 5, 9],
+        4: [1, 3, 7, 9],
+        5: [1, 3, 5, 7, 9],
+        6: [1, 3, 4, 6, 7, 9]
+    };
+    let html = "";
+    for (let i = 1; i <= 9; i++) {
+        html += `<span class="pip ${positions[value].includes(i) ? "on" : ""}"></span>`;
+    }
+    return html;
+}
+
+function setDiceFace(box, value) {
+    box.innerHTML = getDiceFaceHTML(value);
+}
+
+function showDiceDash(box) {
+    box.innerHTML = '<span class="dash">-</span>';
+}
+
+function rollDiceAnimation(box, finalValue) {
+    return new Promise((resolve) => {
+        box.classList.add("rolling");
+        let count = 0;
+        const maxTicks = 8;
+        const interval = setInterval(() => {
+            count++;
+            if (count >= maxTicks) {
+                clearInterval(interval);
+                setDiceFace(box, finalValue);
+                box.classList.remove("rolling");
+                resolve();
+            } else {
+                setDiceFace(box, Math.floor(Math.random() * 6) + 1);
+            }
+        }, 90);
+    });
+}
+
 const SNAKES = { 4: 0, 15: 9, 29: 13, 49: 37, 98: 47 };
 
 let position_01 = 0;
@@ -72,11 +115,8 @@ async function play() {
     const isPlayer1 = currentTurn === 1;
 
     const dice = Math.floor(Math.random() * 6) + 1;
-    if (isPlayer1) {
-        diceBox1.textContent = dice;
-    } else {
-        diceBox2.textContent = dice;
-    }
+    const diceBox = isPlayer1 ? diceBox1 : diceBox2;
+    await rollDiceAnimation(diceBox, dice);
 
     const start = isPlayer1 ? position_01 : position_02;
     let newPos = start + dice;
@@ -148,8 +188,8 @@ function reset() {
     gameOver = false;
     messageEl.textContent = "";
     statusEl.textContent = "It's Player 1 💀's turn";
-    diceBox1.textContent = "-";
-    diceBox2.textContent = "-";
+    showDiceDash(diceBox1);
+    showDiceDash(diceBox2);
     rollBtn.disabled = false;
     buildBoard();
     placePlayers();
