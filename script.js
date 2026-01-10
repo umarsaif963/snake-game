@@ -54,7 +54,43 @@ function rollDiceAnimation(box, finalValue) {
     });
 }
 
-const SNAKES = { 4: 0, 15: 9, 29: 13, 49: 37, 98: 47 };
+// ─── Snake map ─────────────────────────────────────────────────────────────
+// Keys/values are BOARD positions (1–100), the numbers displayed on the cells.
+// key = snake head, value = snake tail. Every head is higher than its tail,
+// so a landed player always slides DOWN. Tails are intentionally NOT heads.
+//
+// Layout is balanced across rows with a mix of drop lengths:
+//   - 90s row: endgame trap, one cell before the finish (long, 94-cell drop)
+//   - 80s row: long drop (39 cells)
+//   - 50s/60s rows: medium drops (23 / 25 cells)
+//   - 10s/20s rows: short drops (13 / 9 cells)
+const snakes = {
+    99: 5, // head 99 → tail 5  (long, endgame trap)
+    87: 48, // head 87 → tail 48 (long drop)
+    64: 39, // head 64 → tail 39 (medium drop)
+    57: 34, // head 57 → tail 34 (medium drop)
+    20: 7, // head 20 → tail 7  (short drop)
+    13: 4  // head 13 → tail 4  (short drop)
+};
+
+// Internal player positions are 0-indexed (0 = cell 1, 99 = cell 100),
+// so we convert between board cells and array indexes.
+function boardToIndex(cell) {
+    return cell - 1;
+}
+
+function indexToBoard(index) {
+    return index + 1;
+}
+
+// Checks whether the given board position (1–100) is a snake head and returns
+// the board position the player moves to. Returns the same cell if no snake.
+function checkSnake(currentPosition) {
+    if (snakes[currentPosition] !== undefined) {
+        return snakes[currentPosition];
+    }
+    return currentPosition;
+}
 
 let position_01 = 0;
 let position_02 = 0;
@@ -67,7 +103,7 @@ function buildBoard() {
         const cell = document.createElement("div");
         cell.className = "cell";
         cell.id = "cell-" + i;
-        if (SNAKES[i - 1] !== undefined) {
+        if (snakes[i] !== undefined) {
             cell.classList.add("snake");
             cell.textContent = "🐍";
         } else {
@@ -93,14 +129,6 @@ function placeMarker(position, symbol, className) {
         marker.classList.add("shift");
     }
     cell.appendChild(marker);
-}
-
-function penalty(p) {
-    if (SNAKES[p] !== undefined) {
-        messageEl.textContent = `🐍 Snake! Move back to ${SNAKES[p] + 1}`;
-        return SNAKES[p];
-    }
-    return p;
 }
 
 function sleep(ms) {
@@ -135,9 +163,13 @@ async function play() {
         messageEl.textContent = `${playerName} 🎲${dice} ➜ cell ${step + 1}`;
     }
 
-    newPos = penalty(newPos);
-    if (newPos !== (isPlayer1 ? position_01 : position_02)) {
-        await sleep(300);
+    // Check if the landed cell is a snake head and slide down if so.
+    const landedCell = indexToBoard(newPos);
+    const finalCell = checkSnake(landedCell);
+    if (finalCell !== landedCell) {
+        messageEl.textContent = `🐍 Snake! Slide down from cell ${landedCell} to cell ${finalCell}`;
+        await sleep(400);
+        newPos = boardToIndex(finalCell);
         if (isPlayer1) {
             position_01 = newPos;
         } else {
